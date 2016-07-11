@@ -8,5 +8,5 @@
 темы. В директории example есть [пример](example/progress.html) такой страницы.
 Её скриншот можно увидеть ниже.
 
-![Скриншот страницы со статистикой](https://github.com/opestov/group-progress/blob/master/progress.png)
+![Скриншот страницы со статистикой](progress.png)
 
