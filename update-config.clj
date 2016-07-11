@@ -1,16 +1,17 @@
-;; Мета-скрипт, который используется для обновления конфигурации групп и
+;; Скрипт который используется для обновления конфигурации групп и
 ;; замены идентификатора задачи на словарь из идентификатора и имени.
-;; Имя берется с сайта (пока поддерживается только информатикс).
+;; Имя берется с информатикса.
 ;;
-;; Скрипт читает файл groups.clj и создает файл groups.clj.new
-;; Запускать скрипт не обязательно. Файл с описанием групп можно править вручную.
+;; Скрипт читает указанный конфигурационный файл и создает новый, добавив к
+;; имени расширение new. Скрипт можно не использовать, если имя задачи
+;; указывается вручную.
 
 (require 'clojure.pprint)
 
 ;; Детали реализации:
 ;;
 ;; 1) Ошибки не обрабатываются - мы хотим сразу о них узнавать
-;; 2) На информатикс странная система и прежде, чем откроется условие задачи,
+;; 2) На информатиксе странная система и прежде, чем откроется условие задачи,
 ;; происходит два редиректа. Их надо выполнить и запомнить куки.
 ;; 3) У HttpUrlConnection не вызывается disconnect. Достаточно закрыть потоки.
 ;; http://kingori.co/minutae/2013/04/httpurlconnection-disconnect/
@@ -80,9 +81,14 @@
   (with-open [w (clojure.java.io/writer filename)]
     (clojure.pprint/pprint object w)))
 
-(defn main []
+(defn main [config-path]
   (let [cookies (login)
-        x (load-file "groups.clj")
+        x (with-open [r (java.io.PushbackReader.
+                          (clojure.java.io/reader config-path))]
+            (clojure.edn/read r))
         y (mapv (partial fix-group cookies) x)]
-    (save y "groups.clj.new")))
-(main)
+    (save y (str config-path ".new"))))
+
+(if (not= 1 (count *command-line-args*))
+  "Usage: java...update-config.clj <config-path>"
+  (time (main (first *command-line-args*))))
