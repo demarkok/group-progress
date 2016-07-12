@@ -1,9 +1,9 @@
 (ns group-progress.html)
 
 (defn- order-users
-	"Takes collection of users and sorts it. Returns a lazy seq of pairs.
-	The first items of pairs are users and the second ones are places."
-	[coll]
+  "Takes collection of users and sorts it. Returns a lazy seq of pairs.
+  The first items of pairs are users and the second ones are places."
+  [coll]
   (let [sorted (sort-by (fn [[k v]] [(- (:solved v)) (:attempts v) k]) coll)
         groups (partition-by (fn [[k v]] (:solved v)) sorted)
         prefix-sums (reduce #(conj %1 (+ (last %1) %2)) [0] (map count groups))]
@@ -16,16 +16,17 @@
             [:td]
             [:td {:class (str "c" (quot (* 10 solved) max))} solved]))]
     [[:h2 (str "Суммарные результаты (обновлено "
-            (.toString
-              (.withNano
-                (java.time.LocalDateTime/now (java.time.ZoneId/of "Europe/Moscow"))
-                0))
+            (.toString (.withNano
+                          (java.time.LocalDateTime/now
+                            (java.time.ZoneId/of "Europe/Moscow"))
+                          0))
             ")")]
     [:table
       [:tr
         [:th]
         [:th]
-        (map-indexed (fn [i _] [:th [:a {:href (str "#" (inc i))} (inc i)]]) (:contests group))
+        (map-indexed (fn [i _] [:th [:a {:href (str "#" (inc i))} (inc i)]])
+          (:contests group))
         [:th {:title "Задачи"} "Σ"]
         [:th {:title "Попытки по решенным задачам"} "±"]]
       (for [[user place] (order-users u)]
@@ -74,20 +75,22 @@
 
 (defn- page-as-vector [group results]
   (let [map' (fn [m f] (into {} (map (fn [[k v]] [k (f v)]) m)))
-        sum (fn [r] (let [s (remove #(= :rj (:state %1)) r)]
-                      {:solved (count s) :attempts (apply + (map :attempts s))}))
+        sum (fn [r]
+              (let [s (remove #(= :rj (:state %1)) r)]
+                {:solved (count s) :attempts (apply + (map :attempts s))}))
         ucp (map' (group-by (juxt :user :contest :problem) results) first)
         uc (map' (group-by (juxt :user :contest) results) sum)
         u (map' (group-by :user results) sum)]
-		[:html {:lang "ru"}
-			[:head
-				[:meta {:charset "utf-8"}]
-				[:style "html{font-size:62.5%}body{font:400 1.6rem/1.5 Tahoma,serif}h1{font-size:2.4rem}h2{font-size:2rem}.ac,.ok,.rj{font-size:1.5rem}table{border-collapse:collapse}td,th{padding:4px 10px;border:1px solid #000;text-align:center}a{text-decoration:none;color:#08c}.left{text-align:left}.ac{color:#070}.ok{color:#b8860b}.rj{color:#b00}.ok0{font-weight:900}.c0{background-color:#a50026}.c1{background-color:#d73027}.c2{background-color:#f46d43}.c3{background-color:#fdae61}.c4{background-color:#fee08b}.c5{background-color:#ffffbf}.c6{background-color:#d9ef8b}.c7{background-color:#a6d96a}.c8{background-color:#66bd63}.c9{background-color:#1a9850}.c10{background-color:#006837}"]
-				[:title (:name group)]]
-			[:body
-				[:h1 (str "Страница группы  «" (:name group) "»")]
-				(g-summary group uc u)
-				(map-indexed (fn [i _] (c-summary group i ucp uc)) (:contests group))]]))
+    [:html {:lang "ru"}
+      [:head
+        [:meta {:charset "utf-8"}]
+        [:style "html{font-size:62.5%}body{font:400 1.6rem/1.5 Tahoma,serif}h1{font-size:2.4rem}h2{font-size:2rem}.ac,.ok,.rj{font-size:1.5rem}table{border-collapse:collapse}td,th{padding:4px 10px;border:1px solid #000;text-align:center}a{text-decoration:none;color:#08c}.left{text-align:left}.ac{color:#070}.ok{color:#b8860b}.rj{color:#b00}.ok0{font-weight:900}.c0{background-color:#a50026}.c1{background-color:#d73027}.c2{background-color:#f46d43}.c3{background-color:#fdae61}.c4{background-color:#fee08b}.c5{background-color:#ffffbf}.c6{background-color:#d9ef8b}.c7{background-color:#a6d96a}.c8{background-color:#66bd63}.c9{background-color:#1a9850}.c10{background-color:#006837}"]
+        [:title (:name group)]]
+      [:body
+        [:h1 (str "Страница группы  «" (:name group) "»")]
+        (g-summary group uc u)
+        (map-indexed (fn [i _] (c-summary group i ucp uc))
+          (:contests group))]]))
 
 (defn- dom [x]
   (cond
@@ -118,5 +121,4 @@
     (map dom x)))
 
 (defn page [group results]
-	(str "<!doctype html>" (dom (page-as-vector group results))))
-
+  (str "<!doctype html>" (dom (page-as-vector group results))))
