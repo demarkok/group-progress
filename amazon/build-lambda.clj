@@ -21,6 +21,6 @@
 
 (delete-recursively (clojure.java.io/file "target/group_progress"))
 (binding [*compile-path* "target"]
-         (compile 'group-progress.aws))
+         (compile 'group-progress.main))
 (zip-dir "target" "lambda.zip")
 
