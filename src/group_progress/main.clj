@@ -68,14 +68,13 @@
         attempts (group-progress.http/attempts saved-attempts ids)]
     (when cache (edn-write cref cache attempts))
     (doseq [[id html] (group-progress.html/pages groups attempts)]
-      (save-html cref (get-html-name dest id) html))
-    (shutdown-agents)))
+      (save-html cref (get-html-name dest id) html))))
 
 (defn -lambda []
   (let [s3client (com.amazonaws.services.s3.AmazonS3Client.)
         config "https://o8v.github.io/school/groups.clj"
         bucket "s3://o8v"
-        cache nil]
+        cache "s3://o8v/progress.cache"]
     (doit (delay s3client) config bucket cache)))
 
 (defn -main
@@ -86,4 +85,6 @@
             (com.amazonaws.services.s3.AmazonS3Client.
               (.getCredentials
                 (com.amazonaws.auth.profile.ProfileCredentialsProvider.))))]
-      (doit cref config dest cache))))
+      (doit cref config dest cache)
+      (shutdown-agents))))
+
