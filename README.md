@@ -217,15 +217,13 @@ aws iam create-role --role-name lambda-progress-role --assume-role-policy-docume
 }
 ```
 
-"Arn": "arn:aws:iam::671386161117:role/lambda-progress-role"
-
 Добавляю права:
 
 ```
 aws iam put-role-policy --role-name lambda-progress-role --policy-name lambda-progress-policy --policy-document file://amazon/permissionpolicy.json
 ```
 
-В файле permissionpolicy.json написано, что функция может писать логи,
+В файле permissionpolicy.json написано, что функция может вести логи,
 читать объекты из С3, помещать объекты в С3, а также указывать права
 доступа при создании файлов. Последнее используется, чтобы сделать
 страницы доступными для чтения снаружи.
@@ -260,8 +258,8 @@ aws iam put-role-policy --role-name lambda-progress-role --policy-name lambda-pr
 
 ### Подготовка архива для использования в сервисе
 
-Теперь можно создать функцию на сервере. С помощью вспомогательного
-скрипта amazon/build-lambda.clj собирается архив.
+С помощью вспомогательного скрипта amazon/build-lambda.clj собирается архив,
+который будет заливаться на сервер.
 
 Важно! Конфигурационный файл, имя корзины для результатов и файл для кеширования
 при использовании Амазон Лямбда прописываются в теле функции lambda, в файле
@@ -277,15 +275,7 @@ java -cp "src;target\lib\*" clojure.main .\amazon\build-lambda.clj
 aws lambda create-function --function-name progress --handler group_progress.main::lambda --runtime java8 --memory 512 --timeout 30 --role arn:aws:iam::671386161117:role/lambda-progress-role --zip-file fileb://./lambda.zip
 ```
 
-В дальнейшем изменить код или конфигурацию функции на сервисе можно с
-помощью 
-
-```
-aws lambda update-function-code --function-name progress --zip-file fileb://./lambda.zip
-aws lambda update-function-configuration --function-name progress --memory-size 512 --timeout 30
-```
-
-Проверяю, что функцию можно вызвать и она делает 
+Проверяю, что функция работает, если вызвать ее вручную.
 
 ```
 aws lambda invoke --function-name progress --log-type Tail outputfile.txt
@@ -293,14 +283,28 @@ aws lambda invoke --function-name progress --log-type Tail outputfile.txt
 
 ###  Запуск функции по расписанию
 
-Осталось сделать так, чтобы каждый день в 7:30 моя функция вызывалась.
-Время вызова нужно подбирать с учетом разницы между часовыми поясами.
-На сервере он один, а у меня - другой.
+Осталось сделать так, чтобы функция вызывалась по расписанию (в примере
+ежедневно в 7:30). Время вызова подбирается с учетом разницы между часовыми
+поясами.  На сервере он один, а у меня — другой.
 
 ```
 aws lambda add-permission --function-name progress --statement-id 'Allow-scheduled-events' --action 'lambda:InvokeFunction' --principal 'events.amazonaws.com'
-aws events put-rule --name am730 --schedule-expression 'cron(30 07 * * ? *)'
-aws events put-targets --rule am730 --targets Id="1",Arn="arn:aws:lambda:eu-west-1:671386161117:function:progress"
+aws events put-rule --name progress-schedule --schedule-expression 'cron(30 07 * * ? *)'
+aws events put-targets --rule progress-schedule --targets Id="1",Arn="arn:aws:lambda:eu-west-1:671386161117:function:progress"
+```
+
+### Модификация
+
+В любой момент можно пересобрать архив и обновить код на сервере:
+
+```
+aws lambda update-function-code --function-name progress --zip-file fileb://./lambda.zip
+```
+
+Или изменить настройки:
+
+```
+aws lambda update-function-configuration --function-name progress --memory-size 512 --timeout 30
 ```
 
 ### Удаление 
@@ -308,8 +312,8 @@ aws events put-targets --rule am730 --targets Id="1",Arn="arn:aws:lambda:eu-west
 Все делается в обратном порядке.
 
 ```
-aws events remove-targets --rule am730 --ids 1
-aws events delete-rule --name am730
+aws events remove-targets --rule progress-schedule --ids 1
+aws events delete-rule --name progress-schedule
 aws lambda remove-permission --function-name progress --statement-id 'Allow-scheduled-events'
 aws lambda delete-function --function-name progress
 aws iam delete-role-policy --role-name lambda-progress-role --policy-name lambda-progress-policy
