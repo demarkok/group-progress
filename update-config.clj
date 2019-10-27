@@ -36,7 +36,7 @@
 
 (defn login []
   "Sends two requests to informatics.mccme.ru and returns cookies."
-  (let [c (hrequest "http://informatics.mccme.ru/course/view.php?id=3")
+  (let [c (hrequest "https://informatics.mccme.ru/course/view.php?id=3")
         cookies
           (->>
             (get (.getHeaderFields c) "Set-Cookie")
@@ -59,7 +59,7 @@
 
 (defn title [cookies id]
   "Returns page's title."
-  (let [u "http://informatics.msk.ru/mod/statements/view3.php?chapterid="
+  (let [u "https://informatics.msk.ru/mod/statements/view3.php?chapterid="
         s (request cookies (str u id))
         i (clojure.string/index-of s "<title>")
         j (clojure.string/index-of s "</title>")]
